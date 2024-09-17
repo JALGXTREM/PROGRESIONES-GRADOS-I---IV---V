@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificación de Progresiones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #555;
+            margin: 10px 0;
+            font-size: 24px;
+        }
+        .button-container, .response-container {
+            margin: 20px 0;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response-container p {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        footer {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>AUDITIVA</h2>
+        <h1>Identificación de Progresiones</h1>
+        <div class="button-container">
+            <button id="playIntervalButton" onclick="playProgression()">Reproducir Progresión</button>
+        </div>
+        <div class="button-container">
+            <button id="ivivvButton" onclick="playSpecificProgression('I-IV-V')">I - IV - V</button>
+            <button id="ivviButton" onclick="playSpecificProgression('IV-V-I')">IV - V - I</button>
+            <button id="vivivButton" onclick="playSpecificProgression('V-IV-I')">V - IV - I</button>
+            <button id="ivvButton" onclick="playSpecificProgression('I-V-IV')">I - V - IV</button>
+        </div>
+        <div class="button-container">
+            <button id="nextButton" onclick="nextExercise()">Siguiente</button>
+        </div>
+        <div class="response-container">
+            <p id="result"></p>
+        </div>
+        <div class="response-container">
+            <p>Aciertos: <span id="correctCount">0</span></p>
+            <p>Errores: <span id="incorrectCount">0</span></p>
+        </div>
+        <footer>
+            Profesor: José Arturo Lozano
+        </footer>
+    </div>
+
+    <script>
+        var correctAnswer = '';
+        var correctCount = 0;
+        var incorrectCount = 0;
+        var currentTone = '';
+        var currentProgression = '';
+        var hasAnswered = false;
+        var hasScored = false;
+        var maxRetries = 3;
+
+        // Define todas las progresiones con sus tonalidades
+        var progressions = {
+            'I-IV-V': {
+                'C': 'I-IV-V TONO C',
+                'G': 'I-IV-V TONO G',
+                'D': 'I-IV-V TONO D',
+                'A': 'I-IV-V TONO A',
+                'E': 'I-IV-V TONO E',
+                'F': 'I-IV-V TONO F',
+                'Bb': 'I-IV-V TONO Bb',
+                'Eb': 'I-IV-V TONO Eb',
+                'Ab': 'I-IV-V TONO Ab'
+            },
+            'IV-V-I': {
+                'C': 'IV-V-I TONO C',
+                'G': 'IV-V-I TONO G',
+                'D': 'IV-V-I TONO D',
+                'A': 'IV-V-I TONO A',
+                'E': 'IV-V-I TONO E',
+                'F': 'IV-V-I TONO F',
+                'Bb': 'IV-V-I TONO Bb',
+                'Eb': 'IV-V-I TONO Eb',
+                'Ab': 'IV-V-I TONO Ab'
+            },
+            'V-IV-I': {
+                'C': 'V-IV-I TONO C',
+                'G': 'V-IV-I TONO G',
+                'D': 'V-IV-I TONO D',
+                'A': 'V-IV-I TONO A',
+                'E': 'V-IV-I TONO E',
+                'F': 'V-IV-I TONO F',
+                'Bb': 'V-IV-I TONO Bb',
+                'Eb': 'V-IV-I TONO Eb',
+                'Ab': 'V-IV-I TONO Ab'
+            },
+            'I-V-IV': {
+                'C': 'I-V-IV TONO C',
+                'G': 'I-V-IV TONO G',
+                'D': 'I-V-IV TONO D',
+                'A': 'I-V-IV TONO A',
+                'E': 'I-V-IV TONO E',
+                'F': 'I-V-IV TONO F',
+                'Bb': 'I-V-IV TONO Bb',
+                'Eb': 'I-V-IV TONO Eb',
+                'Ab': 'I-V-IV TONO Ab'
+            }
+        };
+
+        // Reproduce una progresión aleatoria con una tonalidad aleatoria
+        function playProgression(retryCount = 0) {
+            if (!currentTone) {
+                var progressionType = getRandomProgressionType(); // Selecciona tipo de progresión aleatorio
+                currentTone = getRandomTone(); // Selecciona una tonalidad aleatoria
+                currentProgression = progressions[progressionType][currentTone]; // Asigna la progresión en esa tonalidad
+                correctAnswer = progressionType; // Asigna la respuesta correcta
+            }
+
+            var audio = new Audio(currentProgression + '.mp3');
+            audio.currentTime = 0;
+            audio.play().catch(error => {
+                console.error('Error al reproducir el audio:', error);
+                if (retryCount < maxRetries) {
+                    playProgression(retryCount + 1);
+                } else {
+                    console.error('No se pudo reproducir el audio después de ' + maxRetries + ' intentos.');
+                }
+            });
+
+            document.getElementById('result').textContent = '';
+            enableResponseButtons(true); // Habilita los botones de respuesta
+        }
+
+        // Reproduce la progresión específica seleccionada por el usuario en la misma tonalidad
+        function playSpecificProgression(type) {
+            var progression = progressions[type][currentTone]; // Usa la misma tonalidad actual
+            var audio = new Audio(progression + '.mp3');
+            audio.play().catch(error => {
+                console.error('Error al reproducir el audio:', error);
+            });
+
+            if (!hasAnswered && !hasScored) {
+                checkAnswer(type); // Verifica si la respuesta es correcta
+            }
+        }
+
+        // Verifica la respuesta del usuario
+        function checkAnswer(answer) {
+            var resultElement = document.getElementById('result');
+            if (answer === correctAnswer) {
+                resultElement.textContent = '¡Correcto! Era una ' + correctAnswer;
+                resultElement.style.color = 'green';
+                correctCount++;
+                document.getElementById('correctCount').textContent = correctCount;
+            } else {
+                resultElement.textContent = 'Incorrecto. Era una ' + correctAnswer;
+                resultElement.style.color = 'red';
+                incorrectCount++;
+                document.getElementById('incorrectCount').textContent = incorrectCount;
+            }
+
+            hasAnswered = true;
+            hasScored = true;
+        }
+
+        // Selecciona una progresión aleatoria
+        function getRandomProgressionType() {
+            var types = Object.keys(progressions);
+            return types[Math.floor(Math.random() * types.length)];
+        }
+
+        // Selecciona una tonalidad aleatoria
+        function getRandomTone() {
+            var tones = Object.keys(progressions['I-IV-V']);
+            return tones[Math.floor(Math.random() * tones.length)];
+        }
+
+        // Habilita o deshabilita los botones de respuesta
+        function enableResponseButtons(enable) {
+            document.getElementById('ivivvButton').disabled = !enable;
+            document.getElementById('ivviButton').disabled = !enable;
+            document.getElementById('vivivButton').disabled = !enable;
+            document.getElementById('ivvButton').disabled = !enable;
+        }
+
+        // Pasa al siguiente ejercicio
+        function nextExercise() {
+            currentTone = '';
+            currentProgression = '';
+            hasAnswered = false;
+            hasScored = false;
+            document.getElementById('result').textContent = '';
+            document.getElementById('playIntervalButton').disabled = false;
+            enableResponseButtons(false);
+        }
+
+        enableResponseButtons(false); // Desactiva los botones al inicio
+    </script>
+</body>
+</html>
